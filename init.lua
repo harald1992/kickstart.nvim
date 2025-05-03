@@ -204,26 +204,32 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
 
 SHOW_PANEL = true
+TERMINAL_BUF_ID = 0
 -- MY CUSTOM KEYMAP STUFF:
 vim.keymap.set('n', '<leader>p', function()
   vim.cmd ':CopilotChatToggle'
 
-  -- if SHOW_PANEL then
-  --   local buffers = io.popen 'ls'
-  --   if not buffers then
-  --     return
-  --   end
-  --   local result = buffers.read '*a'
-  --   handle.close()
-  --   vim.cmd 'b3 | hide'
-  --   SHOW_PANEL = false
-  -- else
-  --   vim.cmd 'wincmd l'
-  --   vim.cmd 'split | term'
-  --   vim.cmd 'wincmd j'
-  --   vim.cmd 'b3'
-  --   SHOW_PANEL = true
-  -- end
+  if SHOW_PANEL then
+    local windows = vim.api.nvim_list_wins()
+    for _, win in ipairs(windows) do
+      print('win: ' .. win)
+      local buf_id = vim.api.nvim_win_get_buf(win)
+
+      local buftype = vim.bo[buf_id].buftype -- Get the 'buftype' of the buffer
+      if buftype == 'terminal' then
+        print('buf_id=' .. buf_id)
+        vim.api.nvim_set_current_win(win) -- switch to buffer
+        vim.cmd 'hide'
+        TERMINAL_BUF_ID = buf_id
+        SHOW_PANEL = false
+      end
+    end
+  else
+    vim.cmd 'split' -- splits horizontal so new tab at bottom and adds terminal.
+    vim.cmd 'wincmd j' -- move back to the top split
+    vim.cmd('buffer ' .. TERMINAL_BUF_ID)
+    SHOW_PANEL = true
+  end
 end, { desc = 'Toggle Panel Copilot+Terminal' })
 
 vim.api.nvim_create_autocmd('TermOpen', {
@@ -243,6 +249,7 @@ vim.api.nvim_create_autocmd('VimEnter', {
     vim.wo.number = false -- set the terminal window line numbers to false
     vim.cmd 'wincmd h' -- move back to the top split
     vim.cmd 'vertical resize +25'
+    vim.cmd 'set cmdheight=4'
   end,
 })
 
@@ -531,10 +538,7 @@ require('lazy').setup({
       -- Allows extra capabilities provided by blink.cmp
       'saghen/blink.cmp',
     },
-    opts = {
-      inlayHints = { enabled = true },
-      inlay_hints = { enabled = true },
-    },
+    opts = {},
     config = function()
       -- Brief aside: **What is LSP?**
       --
@@ -565,6 +569,8 @@ require('lazy').setup({
       --    That is to say, every time a new file is opened that is associated with
       --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
       --    function will be executed to configure the current buffer
+      --
+
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
         callback = function(event)
@@ -713,19 +719,13 @@ require('lazy').setup({
       --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
+      --
+      --
       local servers = {
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
-        rust_analyzer = {
-          settings = {
-            ['rust-analyzer'] = {
-              inlayHints = {
-                enable = true,
-              },
-            },
-          },
-        },
+        rust_analyzer = {},
         jdtls = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -771,9 +771,8 @@ require('lazy').setup({
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
-      -- my java-nvim-java setup
+      -- Adding this seems to add annotation processing to nvim-java.
       require('java').setup()
-      require('lspconfig').jdtls.setup {}
 
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
