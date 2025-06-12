@@ -10,6 +10,8 @@
 --
 -- NOTE: Here is where you install your plugins.
 
+vim.loader.enable() -- improve startup time a lot by implementing a chunk cache.
+
 require('lazy').setup({
 
   -- note: plugins can be added with a link (or for a github repo: 'owner/repo' link).
@@ -189,6 +191,7 @@ require('lazy').setup({
       -- enable telescope extensions if they are installed
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
+      pcall(require('telescope').load_extension, 'lazygit')
 
       -- see `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
@@ -225,6 +228,21 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[s]earch [n]eovim files' })
+
+      vim.keymap.set('n', '<leader>sb', function()
+        builtin.find_files {
+          cwd = '~/',
+
+          find_command = { 'rg', '--files', '--glob', '.*', '--glob', '!*/**', '--hidden', '--glob', '!.*/**/*' }, -- Only show hidden files and folders starting with `.`
+        }
+      end, { desc = '[s]earch [b]bash & dotfiles' })
+
+      vim.keymap.set('n', '<leader>sm', function()
+        builtin.find_files {
+          cwd = '~/.m2',
+          find_command = { 'rg', '--files', '--glob', '!wrapper', '--glob', '*.pom' },
+        }
+      end, { desc = '[s]earch [m]aven settings & repository' })
     end,
   },
 

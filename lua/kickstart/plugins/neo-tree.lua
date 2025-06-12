@@ -16,5 +16,12 @@ return {
   ---@type neotree.Config?
   opts = {
     -- fill any relevant options here
+    filesystem = {
+      filtered_items = {
+        hide_hidden = false,
+        hide_dotfiles = false,
+        hide_gitignored = false,
+      },
+    },
   },
 }

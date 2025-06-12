@@ -2,7 +2,7 @@ return {
 
   -- lsp plugins
   {
-    -- `lazydev` configures lua lsp for your neovim config, runtime and plugins
+    -- `lazydev` configures lua lsp for your neovim config, runtime and pluginslsp
     -- used for completion, annotations and signatures of neovim apis
     'folke/lazydev.nvim',
     ft = 'lua',
@@ -14,8 +14,17 @@ return {
     },
   },
   {
+    'nvim-java/nvim-java',
+    event = { 'VeryLazy' },
+    -- config = function()
+    --   -- require('java').setup()
+    -- end,
+    -- enabled = false,
+  },
+  {
     -- main lsp configuration
     'neovim/nvim-lspconfig',
+    event = { 'VeryLazy' },
     dependencies = {
       -- automatically install lsps and related tools to stdpath for neovim
       -- mason must be loaded before its dependents so we need to set it up here.
@@ -132,6 +141,7 @@ return {
           --
           -- When you move your cursor, the highlights will be cleared (the second autocommand).
           local client = vim.lsp.get_client_by_id(event.data.client_id)
+
           if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
             local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
@@ -159,10 +169,12 @@ return {
           -- code, if the language server you are using supports them
           --
           -- This may be unwanted, since they displace some of your code
+
           if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, '[T]oggle Inlay [H]ints')
+            vim.lsp.inlay_hint.enable() -- set default on
           end
         end,
       })
@@ -219,6 +231,7 @@ return {
         -- pyright = {},
         rust_analyzer = {},
         jdtls = {},
+        lemminx = {},
         -- ... etc. see `:help lspconfig-all` for a list of all the pre-configured lsps
         --
         -- some languages (like typescript) have entire language plugins that can be useful:
